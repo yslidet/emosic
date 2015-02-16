@@ -10,6 +10,8 @@
         android:id="@+id/fd_activity_surface_view"
         opencv:camera_id="front"
         
+        
          />
+    
 
 </LinearLayout>
