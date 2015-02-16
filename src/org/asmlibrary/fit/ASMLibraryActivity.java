@@ -13,6 +13,8 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Random;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -79,6 +81,10 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
     private CameraBridgeViewBase   	mOpenCvCameraView;
     private int 					mCameraIndex = CameraBridgeViewBase.CAMERA_ID_FRONT;
     
+    //queue
+    private Queue					tempGuess;
+    private int						cFrame;
+    private int 					[]freq; 
     public ASMLibraryActivity() {
         Log.i(TAG, "Instantiated new " + this.getClass());
     }
@@ -187,9 +193,13 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
         mOpenCvCameraView.setCvCameraViewListener(this);
         mFrame = 0;
         mFlag = false;
-        
         copyAssets(); 
         
+        //guess 
+        tempGuess = new LinkedList<Integer>();
+        cFrame = 0;
+        freq = new int [6];
+        for(int i=0; i<freq.length; i++) freq[i]=0;
         
         		
 //        mOpenCvCameraView.disableView();
@@ -329,24 +339,8 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 		if(mFlag)
 		{
 			//double[] test = new double[FEATURE];
-			svm_model model = null;
-			try {
-				File arffFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/Android/data/"+getPackageName()+"/files/ckfe.txt.model");
-				//Log.d("ARFF","File path: "+Environment.getExternalStorageDirectory().getAbsolutePath());
-				Log.d("ARFF","File exist: "+arffFile.exists());
-				model = svm.svm_load_model(Environment.getExternalStorageDirectory().getAbsolutePath()+"/Android/data/"+getPackageName()+"/files/ckfe.txt.model");
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
 			
-			int NUM_ATTR = 13;
-			svm_node[] test = new svm_node[NUM_ATTR];
-
-			for(int i=0; i<NUM_ATTR; i++) {
-				test[i] = new svm_node();
-				test[i].index = i+1;
-			}
+			double fWidth = 0;
 			if(mPortrait == true)
 			{
 				int nPoints = mShape.row(0).cols()/2;
@@ -354,7 +348,7 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 				double[] xLeft={mShape.get(0, 2*0+1)[0],mShape.get(0, 2*1+1)[0],mShape.get(0, 2*2+1)[0],mShape.get(0, 2*3+1)[0],mShape.get(0, 2*4+1)[0]};
 				double[] xRight={mShape.get(0, 2*14+1)[0],mShape.get(0, 2*13+1)[0],mShape.get(0, 2*12+1)[0],mShape.get(0, 2*11+1)[0],mShape.get(0, 2*10+1)[0]};
 			    
-				double fWidth=getMaxValue(xRight)-getMinValue(xLeft); //face width
+				fWidth=getMaxValue(xRight)-getMinValue(xLeft); //face width
 				
 				xLeft=null;
 				xRight=null;
@@ -376,33 +370,6 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 					
 					Core.circle(mRgba, pt, 3, mColor);
 				}		
-//--------------------------------------------------------------------------------------------------------------------------------------
-//getting feature points 
-				//myfile << "	<eyebrow-eye>" <<endl;
-				test[0].value= distanceP(mShape.get(0, 2*21+1)[0],mShape.get(0, 2*21)[0], mShape.get(0, 2*27+1)[0],mShape.get(0, 2*27)[0])/fWidth;
-				test[1].value= distanceP(mShape.get(0, 2*24+1)[0],mShape.get(0, 2*24)[0], mShape.get(0, 2*29+1)[0],mShape.get(0, 2*29)[0])/fWidth;
-				test[2].value= distanceP(mShape.get(0, 2*18+1)[0],mShape.get(0, 2*18)[0], mShape.get(0, 2*34+1)[0],mShape.get(0, 2*34)[0])/fWidth;
-				test[3].value= distanceP(mShape.get(0, 2*15+1)[0],mShape.get(0, 2*15)[0], mShape.get(0, 2*32+1)[0],mShape.get(0, 2*32)[0])/fWidth;
-
-				//myfile << "	<eye>" ;
-				test[4].value = distanceP(mShape.get(0,2*27+1)[0],mShape.get(0,2*27)[0], mShape.get(0,2*29+1)[0],mShape.get(0,2*29)[0])/distanceP(mShape.get(0,2*28+1)[0], mShape.get(0,2*28)[0],mShape.get(0,2*30+1)[0],mShape.get(0,2*30)[0]);
-				test[5].value = distanceP(mShape.get(0,2*34+1)[0],mShape.get(0,2*34)[0], mShape.get(0,2*32+1)[0],mShape.get(0,2*32)[0])/distanceP(mShape.get(0,2*33+1)[0], mShape.get(0,2*33)[0],mShape.get(0,2*35+1)[0],mShape.get(0,2*35)[0]);
-				
-				//myfile << "	<mouth>" ;
-				test[6].value = distanceP(mShape.get(0,2*48+1)[0],mShape.get(0,2*48)[0], mShape.get(0,2*54+1)[0],mShape.get(0,2*54)[0])/distanceP(mShape.get(0,2*64+1)[0],mShape.get(0,2*64)[0], mShape.get(0,2*61+1)[0],mShape.get(0,2*61)[0]);
-				
-				//myfile << "	<eye-mouth>" ;
-				test[7].value=distanceP(mShape.get(0,2*30+1)[0],mShape.get(0,2*30)[0], mShape.get(0,2*48+1)[0],mShape.get(0,2*48)[0])/fWidth;
-				test[8].value=distanceP(mShape.get(0,2*35+1)[0],mShape.get(0,2*35)[0], mShape.get(0,2*54+1)[0],mShape.get(0,2*54)[0])/fWidth;
-
-				//myfile << "	<eye-nose>" ;
-				test[9].value=distanceP(mShape.get(0,2*30+1)[0],mShape.get(0,2*30)[0], mShape.get(0,2*40+1)[0],mShape.get(0,2*40)[0])/fWidth;
-				test[10].value=distanceP(mShape.get(0,2*35+1)[0],mShape.get(0,2*35)[0],mShape.get(0,2*42+1)[0],mShape.get(0,2*42+1)[0])/fWidth;
-
-				//myfile << "	nose-mouth" ;
-				test[11].value=distanceP(mShape.get(0,2*40+1)[0],mShape.get(0,2*40)[0], mShape.get(0,2*48+1)[0],mShape.get(0,2*48)[0])/fWidth;
-				test[12].value=distanceP(mShape.get(0,2*42+1)[0],mShape.get(0,2*42)[0], mShape.get(0,2*54+1)[0],mShape.get(0,2*54)[0])/fWidth;
-//--------------------------------------------------------------------------------------------------------------------------------------
 			}
 			else
 			{
@@ -411,7 +378,7 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 				double[] xLeft={mShape.get(0, 2*0)[0],mShape.get(0, 2*1)[0],mShape.get(0, 2*2)[0],mShape.get(0, 2*3)[0],mShape.get(0, 2*4)[0]};
 				double[] xRight={mShape.get(0, 2*14)[0],mShape.get(0, 2*13)[0],mShape.get(0, 2*12)[0],mShape.get(0, 2*11)[0],mShape.get(0, 2*10)[0]};
 			    
-				double fWidth=getMaxValue(xRight)-getMinValue(xLeft); //face width
+				fWidth=getMaxValue(xRight)-getMinValue(xLeft); //face width
 				
 				xLeft=null;
 				xRight=null;
@@ -421,14 +388,38 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 					Point pt = new Point(mShape.get(0, 2*i)[0], mShape.get(0, 2*i+1)[0]);
 					Core.circle(mRgba, pt, 3, mColor);
 				}
-//--------------------------------------------------------------------------------------------------------------------------------------
-//getting feature points 
+
+			}
+			
+			if (cFrame==10)
+			{
+				//make prediction.
+				svm_model model = null;
+				try {
+					File arffFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/Android/data/"+getPackageName()+"/files/ckfe.txt.model");
+					//Log.d("ARFF","File path: "+Environment.getExternalStorageDirectory().getAbsolutePath());
+					Log.d("ARFF","File exist: "+arffFile.exists());
+					model = svm.svm_load_model(Environment.getExternalStorageDirectory().getAbsolutePath()+"/Android/data/"+getPackageName()+"/files/ckfe.txt.model");
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				int NUM_ATTR = 13;
+				svm_node[] test = new svm_node[NUM_ATTR];
+	
+				for(int i=0; i<NUM_ATTR; i++) {
+					test[i] = new svm_node();
+					test[i].index = i+1;
+				}
+				//--------------------------------------------------------------------------------------------------------------------------------------
+				//getting feature points 
 				//myfile << "	<eyebrow-eye>" <<endl;
 				test[0].value= distanceP(mShape.get(0, 2*21)[0],mShape.get(0, 2*21+1)[0], mShape.get(0, 2*27)[0],mShape.get(0, 2*27+1)[0])/fWidth;
 				test[1].value= distanceP(mShape.get(0, 2*24)[0],mShape.get(0, 2*24+1)[0], mShape.get(0, 2*29)[0],mShape.get(0, 2*29+1)[0])/fWidth;
 				test[2].value= distanceP(mShape.get(0, 2*18)[0],mShape.get(0, 2*18+1)[0], mShape.get(0, 2*34)[0],mShape.get(0, 2*34+1)[0])/fWidth;
 				test[3].value= distanceP(mShape.get(0, 2*15)[0],mShape.get(0, 2*15+1)[0], mShape.get(0, 2*32)[0],mShape.get(0, 2*32+1)[0])/fWidth;
-
+	
 				//myfile << "	<eye>" ;
 				test[4].value= distanceP(mShape.get(0,2*27)[0],mShape.get(0,2*27+1)[0], mShape.get(0,2*29)[0],mShape.get(0,2*29+1)[0])/distanceP(mShape.get(0,2*28)[0], mShape.get(0,2*28+1)[0],mShape.get(0,2*30)[0],mShape.get(0,2*30+1)[0]);
 				test[5].value= distanceP(mShape.get(0,2*34)[0],mShape.get(0,2*34+1)[0], mShape.get(0,2*32)[0],mShape.get(0,2*32+1)[0])/distanceP(mShape.get(0,2*33)[0], mShape.get(0,2*33+1)[0],mShape.get(0,2*35)[0],mShape.get(0,2*35+1)[0]);
@@ -439,36 +430,49 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 				//myfile << "	<eye-mouth>" ;
 				test[7].value=distanceP(mShape.get(0,2*30)[0],mShape.get(0,2*30+1)[0], mShape.get(0,2*48)[0],mShape.get(0,2*48+1)[0])/fWidth;
 				test[8].value=distanceP(mShape.get(0,2*35)[0],mShape.get(0,2*35+1)[0], mShape.get(0,2*54)[0],mShape.get(0,2*54+1)[0])/fWidth;
-
+	
 				//myfile << "	<eye-nose>" ;
 				test[9].value=distanceP(mShape.get(0,2*30)[0],mShape.get(0,2*30+1)[0], mShape.get(0,2*40)[0],mShape.get(0,2*40+1)[0])/fWidth;
 				test[10].value=distanceP(mShape.get(0,2*35)[0],mShape.get(0,2*35+1)[0],mShape.get(0,2*42)[0],mShape.get(0,2*42+1)[0])/fWidth;
-
+	
 				//myfile << "	nose-mouth" ;
 				test[11].value=distanceP(mShape.get(0,2*40)[0],mShape.get(0,2*40+1)[0], mShape.get(0,2*48)[0],mShape.get(0,2*48+1)[0])/fWidth;
 				test[12].value=distanceP(mShape.get(0,2*42)[0],mShape.get(0,2*42+1)[0], mShape.get(0,2*54)[0],mShape.get(0,2*54+1)[0])/fWidth;
-//--------------------------------------------------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------
+				/*
+				//debug log
+				Log.d("ASM_Feature", "test 0: " + test[0]);
+				Log.d("ASM_Feature", "test 1: " + test[1]);
+				Log.d("ASM_Feature", "test 2: " + test[2]);
+				Log.d("ASM_Feature", "test 3: " + test[3]);
+				Log.d("ASM_Feature", "test 4: " + test[4]);
+				Log.d("ASM_Feature", "test 5: " + test[5]);
+				Log.d("ASM_Feature", "test 6: " + test[6]);
+				Log.d("ASM_Feature", "test 7: " + test[7]);
+				Log.d("ASM_Feature", "test 8: " + test[8]);	
+				Log.d("ASM_Feature", "test 9: " + test[9]);
+				Log.d("ASM_Feature", "test 10: " + test[10]);
+				Log.d("ASM_Feature", "test 11: " + test[11]);
+				Log.d("ASM_Feature", "test 12: " + test[12]);
+				*/
+				
+				double v = svm.svm_predict(model,test);
+				//Log.d("SVM", "result: " + v);
+				freq[(int)v]++;
+				//record the result
+				int temp;
+				if (tempGuess.size() >= 5)
+				{
+					temp = (Integer) tempGuess.remove();
+					freq[temp]--;
+				}
+				tempGuess.add((int)v);
+				cFrame = -1;
+				Log.d("SVM", "result: " + getMaxIndex(freq));
 			}
-			/*
-			//debug log
-			Log.d("ASM_Feature", "test 0: " + test[0]);
-			Log.d("ASM_Feature", "test 1: " + test[1]);
-			Log.d("ASM_Feature", "test 2: " + test[2]);
-			Log.d("ASM_Feature", "test 3: " + test[3]);
-			Log.d("ASM_Feature", "test 4: " + test[4]);
-			Log.d("ASM_Feature", "test 5: " + test[5]);
-			Log.d("ASM_Feature", "test 6: " + test[6]);
-			Log.d("ASM_Feature", "test 7: " + test[7]);
-			Log.d("ASM_Feature", "test 8: " + test[8]);	
-			Log.d("ASM_Feature", "test 9: " + test[9]);
-			Log.d("ASM_Feature", "test 10: " + test[10]);
-			Log.d("ASM_Feature", "test 11: " + test[11]);
-			Log.d("ASM_Feature", "test 12: " + test[12]);
-			*/
+			//Log.d("cFrame", ""+cFrame);
+			cFrame ++;
 			
-			double v = svm.svm_predict(model,test);		
-			Log.d("SVM", "result: " + v);
-			//System.out.print(v);
 		}
 		
 		
@@ -555,8 +559,17 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
          }  
         return minValue;  
     }
-    
-    
+ 
+    public int getMaxIndex(int []array){
+    	int result=0;
+    	
+    	for (int i=0; i<array.length; i++)
+    	{
+    		if (array[result] < array[i]) result = i;
+    	}
+		return result;
+    	
+    }
     //----------------------------------------------------------------------
     //COPY Asset to Android data/data
     private void copyAssets() {
