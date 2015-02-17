@@ -48,24 +48,38 @@ containing a value of this type.
         public static final int activity_vertical_margin=0x7f060001;
     }
     public static final class drawable {
-        public static final int ic_launcher=0x7f020000;
-        public static final int icon=0x7f020001;
-        public static final int lanch_icon=0x7f020002;
+        public static final int appname=0x7f020000;
+        public static final int custom_progressbar=0x7f020001;
+        public static final int emo_angry=0x7f020002;
+        public static final int emo_disgust=0x7f020003;
+        public static final int emo_fear=0x7f020004;
+        public static final int emo_happy=0x7f020005;
+        public static final int emo_sad=0x7f020006;
+        public static final int emo_surprised=0x7f020007;
+        public static final int ic_launcher=0x7f020008;
+        public static final int icon=0x7f020009;
+        public static final int lanch_icon=0x7f02000a;
+        public static final int musicbar=0x7f02000b;
+        public static final int spin_animation=0x7f02000c;
     }
     public static final class id {
-        public static final int action_settings=0x7f050007;
+        public static final int action_settings=0x7f05000a;
         public static final int any=0x7f050000;
         public static final int back=0x7f050001;
         public static final int btn_hearme=0x7f050005;
         public static final int btn_ifeel=0x7f050004;
-        public static final int fd_activity_surface_view=0x7f050006;
+        public static final int facegif=0x7f050006;
+        public static final int fd_activity_surface_view=0x7f050009;
         public static final int front=0x7f050002;
         public static final int img_main=0x7f050003;
+        public static final int progressBar1=0x7f050008;
+        public static final int title=0x7f050007;
     }
     public static final class layout {
         public static final int activity_main=0x7f030000;
-        public static final int face_detect_surface_view=0x7f030001;
-        public static final int main=0x7f030002;
+        public static final int activity_splash=0x7f030001;
+        public static final int face_detect_surface_view=0x7f030002;
+        public static final int main=0x7f030003;
     }
     public static final class menu {
         public static final int main=0x7f080000;
