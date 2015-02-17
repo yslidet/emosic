@@ -39,6 +39,7 @@ int raw my68_1d 0x7f040004
 int raw test 0x7f040005
 int string action_settings 0x7f070004
 int string app_name 0x7f070001
+int string cloud 0x7f070005
 int string hello 0x7f070000
 int string slogan 0x7f070003
 int string title_activity_main 0x7f070002

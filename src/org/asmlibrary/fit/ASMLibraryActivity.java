@@ -14,6 +14,7 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Queue;
 import java.util.Random;
 
@@ -49,6 +50,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
+import android.widget.TextView;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.hardware.Camera;
@@ -82,9 +84,12 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
     private int 					mCameraIndex = CameraBridgeViewBase.CAMERA_ID_FRONT;
     
     //queue
-    private Queue					tempGuess;
+    private int[]					tempGuess = new int[5];
     private int						cFrame;
     private int 					[]freq; 
+    //private TextView				guessResult;
+    
+    
     public ASMLibraryActivity() {
         Log.i(TAG, "Instantiated new " + this.getClass());
     }
@@ -188,7 +193,8 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.face_detect_surface_view);
-
+        //guessResult = (TextView) findViewById(R.id.guessResult);
+        
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.fd_activity_surface_view);
         mOpenCvCameraView.setCvCameraViewListener(this);
         mFrame = 0;
@@ -196,7 +202,7 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
         copyAssets(); 
         
         //guess 
-        tempGuess = new LinkedList<Integer>();
+        for(int i=0; i<tempGuess.length; i++) tempGuess[i]=-1;
         cFrame = 0;
         freq = new int [6];
         for(int i=0; i<freq.length; i++) freq[i]=0;
@@ -391,7 +397,7 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 
 			}
 			
-			if (cFrame==10)
+			if (cFrame==9)
 			{
 				//make prediction.
 				svm_model model = null;
@@ -457,21 +463,23 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 				*/
 				
 				double v = svm.svm_predict(model,test);
-				//Log.d("SVM", "result: " + v);
-				freq[(int)v]++;
+				
+				freq[(int)v-1]++; //change here
 				//record the result
 				int temp;
-				if (tempGuess.size() >= 5)
-				{
-					temp = (Integer) tempGuess.remove();
-					freq[temp]--;
-				}
-				tempGuess.add((int)v);
-				cFrame = -1;
-				Log.d("SVM", "result: " + getMaxIndex(freq));
+				
+				temp = addQueue(tempGuess, (int)v);
+				Log.d("SVM", "stat: " + tempGuess[0]+" "+tempGuess[1]+" "+tempGuess[2]+" "+tempGuess[3]+" "+tempGuess[4]);
+				
+				if (temp!=-1) freq[temp-1]--;
+				
+				cFrame = -1;	
+				
+				//guessResult.setText(""+v);
+				Log.d("SVM", "result: " + (getMaxIndex(freq)+1));
 			}
-			//Log.d("cFrame", ""+cFrame);
 			cFrame ++;
+			Log.d("cFrame", ""+cFrame);
 			
 		}
 		
@@ -531,6 +539,18 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 			}
 		//}
     }
+	//add tail to linkedlist queue 
+	public int addQueue(int []q,int tail){
+		int head=q[0];
+			
+		for(int i=0; i < q.length-1; i++)
+		{
+			q[i]=q[i+1];
+		}
+		q[q.length-1]=tail;
+		
+		return head;
+	}
     
     public static double distanceP(double p1x, double p1y, double p2x, double p2y){
     	double result;
