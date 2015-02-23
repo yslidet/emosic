@@ -63,11 +63,13 @@ containing a value of this type.
         public static final int spin_animation=0x7f02000c;
     }
     public static final class id {
-        public static final int action_settings=0x7f05000a;
+        public static final int action_settings=0x7f05000c;
         public static final int any=0x7f050000;
         public static final int back=0x7f050001;
         public static final int btn_hearme=0x7f050005;
         public static final int btn_ifeel=0x7f050004;
+        public static final int emo=0x7f05000a;
+        public static final int emo_desc=0x7f05000b;
         public static final int facegif=0x7f050006;
         public static final int fd_activity_surface_view=0x7f050009;
         public static final int front=0x7f050002;

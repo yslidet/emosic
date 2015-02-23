@@ -13,9 +13,6 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
-import java.util.ListIterator;
-import java.util.Queue;
 import java.util.Random;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -50,6 +47,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
@@ -83,6 +81,8 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
     private CameraBridgeViewBase   	mOpenCvCameraView;
     private int 					mCameraIndex = CameraBridgeViewBase.CAMERA_ID_FRONT;
     
+    public TextView emoDesc;
+    private ImageView emo;
     //queue
     private int[]					tempGuess = new int[5];
     private int						cFrame;
@@ -193,7 +193,8 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.face_detect_surface_view);
-        //guessResult = (TextView) findViewById(R.id.guessResult);
+        emoDesc = (TextView) findViewById(R.id.emo_desc);
+        emo = (ImageView) findViewById(R.id.emo);
         
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.fd_activity_surface_view);
         mOpenCvCameraView.setCvCameraViewListener(this);
@@ -305,6 +306,7 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
     }
 
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
+    	
     	try {
 			//trainWeka();
 		} catch (Exception e) {
@@ -477,6 +479,10 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 				
 				//guessResult.setText(""+v);
 				Log.d("SVM", "result: " + (getMaxIndex(freq)+1));
+				
+				//emoDesc = (TextView) findViewById(R.id.emo_desc);
+				emoDesc.setText("test");
+				//showEmo(getMaxIndex(freq)+1);
 			}
 			cFrame ++;
 			Log.d("cFrame", ""+cFrame);
@@ -494,8 +500,35 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 		
         return mRgba;
     }
-    
-    
+ 
+  /*
+    //Show emo on screen
+    void showEmo(int intEmo){
+    	
+  	
+    	switch(intEmo){
+    		case 1: //emo.setImageResource(R.drawable.emo_surprised);
+    				emoDesc.setText("Surprise");
+    				break;
+    		case 2: //emo.setImageResource(R.drawable.emo_fear);
+					emoDesc.setText("Fear");
+						break;
+    		case 3: //emo.setImageResource(R.drawable.emo_happy);
+					emoDesc.setText("Happy");
+						break;
+    		case 4: //emo.setImageResource(R.drawable.emo_sad);
+					emoDesc.setText("Sad");
+						break;
+    		case 5: //emo.setImageResource(R.drawable.emo_angry);
+					emoDesc.setText("Anger");
+						break;
+    		case 6: //emo.setImageResource(R.drawable.emo_disgust);
+					emoDesc.setText("Disgust");
+						break;
+    		
+    	}
+    }
+   */ 
 	public void trainWeka() throws Exception{
     	
 		//File arffFile = new File(System.getProperty("user.dir")+"//res//raw//ckfe.arff");
