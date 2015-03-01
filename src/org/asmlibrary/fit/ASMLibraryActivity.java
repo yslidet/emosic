@@ -2,17 +2,11 @@ package org.asmlibrary.fit;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Random;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -26,13 +20,17 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Point;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
+import org.achartengine.ChartFactory;
+import org.achartengine.GraphicalView;
+import org.achartengine.chart.PointStyle;
+import org.achartengine.model.TimeSeries;
+import org.achartengine.model.XYMultipleSeriesDataset;
+import org.achartengine.renderer.XYMultipleSeriesRenderer;
+import org.achartengine.renderer.XYSeriesRenderer;
 import org.asmlibrary.fit.R;
 import org.asmlibrary.fit.ASMFit;
+
+//import com.jjoe64.graphview.*;
 
 import weka.classifiers.Evaluation;
 import weka.classifiers.bayes.NaiveBayes;
@@ -40,7 +38,9 @@ import weka.core.Instances;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -48,9 +48,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.content.res.AssetManager;
-import android.content.res.Configuration;
+import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
 import libsvm.*;
@@ -88,6 +90,9 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
     private int						cFrame;
     private int 					[]freq; 
     //private TextView				guessResult;
+    private GraphicalView			lineGraph;
+    private RelativeLayout 			chartContainer;
+    
     
     
     public ASMLibraryActivity() {
@@ -208,10 +213,16 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
         freq = new int [6];
         for(int i=0; i<freq.length; i++) freq[i]=0;
         
+     // Getting a reference to LinearLayout of the MainActivity Layout
+        chartContainer = (RelativeLayout) findViewById(R.id.lineGraph);
+        openGraph(tempGuess);
         		
 //        mOpenCvCameraView.disableView();
 //        mOpenCvCameraView.setCameraIndex(mCameraIndex);
 //        mOpenCvCameraView.enableView();
+        
+        //Intent musicIntent = new Intent(this, MusicService.class);
+        //startService(musicIntent);
   
     }
 	
@@ -287,6 +298,8 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
     public void onDestroy() {
         super.onDestroy();
         mOpenCvCameraView.disableView();
+        //Intent musicIntent = new Intent(this, MusicService.class);
+        //stopService(musicIntent);
     }
 
     public void onCameraViewStarted(int width, int height) {
@@ -481,11 +494,22 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 				Log.d("SVM", "result: " + (getMaxIndex(freq)+1));
 				
 				//emoDesc = (TextView) findViewById(R.id.emo_desc);
-				emoDesc.setText("test");
-				//showEmo(getMaxIndex(freq)+1);
+				
+				showEmo(getMaxIndex(freq)+1);
+				runOnUiThread(new Runnable() {
+					
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						updateLineGraph(tempGuess);
+					}
+				});
+				
 			}
 			cFrame ++;
 			Log.d("cFrame", ""+cFrame);
+			
+			
 			
 		}
 		
@@ -501,34 +525,176 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
         return mRgba;
     }
  
-  /*
+    //Line Graph
+    public void openGraph(int []y){
+    	int []x={1,2,3,4,5};
+		//int []y={1,6,2,2,3};
+		
+		//convert to series
+		TimeSeries series = new TimeSeries("Line1");
+		for (int i=0; i<x.length; i++)
+		{
+			series.add(x[i], y[i]);
+		}
+		
+		//draw the line - graph can have more series
+		XYMultipleSeriesDataset dataset = new XYMultipleSeriesDataset();
+		dataset.addSeries(series);
+		
+		//give properties of the line
+		XYMultipleSeriesRenderer mRenderer = new XYMultipleSeriesRenderer();
+		XYSeriesRenderer renderer = new XYSeriesRenderer();
+		renderer.setColor(Color.RED);
+		renderer.setPointStyle(PointStyle.DIAMOND);
+		renderer.setFillPoints(true);
+		renderer.setLineWidth(3);
+		
+		mRenderer.addSeriesRenderer(renderer);
+		mRenderer.setYAxisMin(0);
+		mRenderer.setYAxisMax(6);
+		mRenderer.setXAxisMax(5);
+		mRenderer.setXAxisMin(0);
+		mRenderer.setPointSize(3);
+        // Creating a Line Chart
+        lineGraph = ChartFactory.getLineChartView(getBaseContext(), dataset, mRenderer);
+ 
+        // Adding the Line Chart to the LinearLayout
+        chartContainer.addView(lineGraph);
+    }
+    
+    public void updateLineGraph(int []y){
+    	if (lineGraph!=null){
+    		chartContainer.removeView(lineGraph);
+    	}
+    	
+    	int []x={1,2,3,4,5};
+		//int []y={1,6,2,2,3};
+		
+		//convert to series
+		TimeSeries series = new TimeSeries("Line1");
+		for (int i=0; i<x.length; i++)
+		{
+			series.add(x[i], y[i]);
+		}
+		
+		//draw the line - graph can have more series
+		XYMultipleSeriesDataset dataset = new XYMultipleSeriesDataset();
+		dataset.addSeries(series);
+		
+		//give properties of the line
+		XYMultipleSeriesRenderer mRenderer = new XYMultipleSeriesRenderer();
+		XYSeriesRenderer renderer = new XYSeriesRenderer();
+		renderer.setColor(Color.RED);
+		renderer.setPointStyle(PointStyle.DIAMOND);
+		renderer.setFillPoints(true);
+		renderer.setLineWidth(3);
+		
+		mRenderer.setYAxisMin(0);
+		mRenderer.setYAxisMax(6);
+		mRenderer.setXAxisMax(5);
+		mRenderer.setXAxisMin(1);
+		mRenderer.setPointSize(6);
+		
+		mRenderer.addSeriesRenderer(renderer);
+ 
+        // Creating a Line Chart
+        lineGraph = ChartFactory.getLineChartView(getBaseContext(), dataset, mRenderer);
+ 
+        // Adding the Line Chart to the LinearLayout
+        chartContainer.addView(lineGraph);
+        
+		lineGraph.repaint();
+
+    	
+    }
+    
     //Show emo on screen
     void showEmo(int intEmo){
+    	//Intent musicBroadcast = new Intent(Const.ACTION_CHANGE_MUSIC);
+    	//musicBroadcast.putExtra(Const.EMO_INDEX, intEmo-1);
+    	//sendBroadcast(musicBroadcast);
     	
-  	
-    	switch(intEmo){
-    		case 1: //emo.setImageResource(R.drawable.emo_surprised);
+    	if (intEmo==1){
+    		runOnUiThread(new Runnable() {					
+    			@Override
+    			public void run() {
+    				// TODO Auto-generated method stub
+    				
+    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
+    				emo.setImageResource(R.drawable.emo_surprised);
     				emoDesc.setText("Surprise");
-    				break;
-    		case 2: //emo.setImageResource(R.drawable.emo_fear);
-					emoDesc.setText("Fear");
-						break;
-    		case 3: //emo.setImageResource(R.drawable.emo_happy);
-					emoDesc.setText("Happy");
-						break;
-    		case 4: //emo.setImageResource(R.drawable.emo_sad);
-					emoDesc.setText("Sad");
-						break;
-    		case 5: //emo.setImageResource(R.drawable.emo_angry);
-					emoDesc.setText("Anger");
-						break;
-    		case 6: //emo.setImageResource(R.drawable.emo_disgust);
-					emoDesc.setText("Disgust");
-						break;
-    		
+    			}
+    		});
     	}
+    	else if (intEmo==2){
+    		runOnUiThread(new Runnable() {					
+    			@Override
+    			public void run() {
+    				// TODO Auto-generated method stub
+    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
+    				emo.setImageResource(R.drawable.emo_fear);
+    				emoDesc.setText("Fear");
+    			}
+    		});
+    	}
+    	else if (intEmo==3){
+    		runOnUiThread(new Runnable() {					
+    			@Override
+    			public void run() {
+    				// TODO Auto-generated method stub
+    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
+    				emo.setImageResource(R.drawable.emo_happy);
+    				emoDesc.setText("Happy");
+    			}
+    		});
+    	}
+    	else if (intEmo==4){
+    		runOnUiThread(new Runnable() {					
+    			@Override
+    			public void run() {
+    				// TODO Auto-generated method stub
+    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
+    				emo.setImageResource(R.drawable.emo_sad);
+    				emoDesc.setText("Sad");
+    			}
+    		});
+    	}
+    	else if (intEmo==5){
+    		runOnUiThread(new Runnable() {					
+    			@Override
+    			public void run() {
+    				// TODO Auto-generated method stub
+    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
+    				emo.setImageResource(R.drawable.emo_angry);
+    				emoDesc.setText("Anger");
+    			}
+    		});
+    	}
+    	else if (intEmo==6){
+    		runOnUiThread(new Runnable() {					
+    			@Override
+    			public void run() {
+    				// TODO Auto-generated method stub
+    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
+    				emo.setImageResource(R.drawable.emo_disgust);
+    				emoDesc.setText("Disgust");
+    			}
+    		});
+    	}
+    	else{
+    		runOnUiThread(new Runnable() {					
+    			@Override
+    			public void run() {
+    				// TODO Auto-generated method stub
+    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
+    				emo.setImageResource(R.drawable.ic_launcher);
+    				emoDesc.setText("Neutral");
+    			}
+    		});
+    	}
+    	
     }
-   */ 
+    
 	public void trainWeka() throws Exception{
     	
 		//File arffFile = new File(System.getProperty("user.dir")+"//res//raw//ckfe.arff");
@@ -618,7 +784,7 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
     	
     	for (int i=0; i<array.length; i++)
     	{
-    		if (array[result] < array[i]) result = i;
+    		if (array[result] <= array[i]) result = i;  //tie breaker, choose the most recent one.
     	}
 		return result;
     	

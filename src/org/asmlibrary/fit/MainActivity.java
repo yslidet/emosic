@@ -33,6 +33,17 @@ public class MainActivity extends Activity {
 			}
 		});
 		
+		hearme.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				Intent intent = new Intent(MainActivity.this, MusicActivity.class);
+				startActivity(intent);
+				
+				finish();
+			}
+		});
 	}
 
 	@Override
