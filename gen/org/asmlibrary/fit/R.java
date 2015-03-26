@@ -90,12 +90,12 @@ containing a value of this type.
     }
     public static final class raw {
         public static final int ckfe=0x7f040000;
-        public static final int emo_1_happy=0x7f040001;
-        public static final int emo_2_sad=0x7f040002;
-        public static final int emo_3_fear=0x7f040003;
-        public static final int emo_4_angry=0x7f040004;
-        public static final int emo_5_disgust=0x7f040005;
-        public static final int emo_6_surprise=0x7f040006;
+        public static final int emo_1_surprise=0x7f040001;
+        public static final int emo_2_fear=0x7f040002;
+        public static final int emo_3_happy=0x7f040003;
+        public static final int emo_4_sad=0x7f040004;
+        public static final int emo_5_digust=0x7f040005;
+        public static final int emo_6_anger=0x7f040006;
         public static final int gump=0x7f040007;
         public static final int haarcascade_frontalface_alt2=0x7f040008;
         public static final int lbpcascade_frontalface=0x7f040009;

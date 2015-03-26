@@ -29,7 +29,7 @@ public class MainActivity extends Activity {
 				Intent intent = new Intent(MainActivity.this, ASMLibraryActivity.class);
 				startActivity(intent);
 				
-				finish();
+				//finish();
 			}
 		});
 		
@@ -41,7 +41,7 @@ public class MainActivity extends Activity {
 				Intent intent = new Intent(MainActivity.this, MusicActivity.class);
 				startActivity(intent);
 				
-				finish();
+				//finish();
 			}
 		});
 	}

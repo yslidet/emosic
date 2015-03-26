@@ -95,8 +95,8 @@ public class MusicActivity extends Activity implements CvCameraViewListener2{
     private RelativeLayout 			chartContainer;
     
     //music pool
-    private MusicPool				musicPool;
-   
+    //private MusicPool				musicPool;
+    private MusicPlayerCrossFade 	musicPlayer;
     
     public MusicActivity() {
         Log.i(TAG, "Instantiated new " + this.getClass());
@@ -229,9 +229,9 @@ public class MusicActivity extends Activity implements CvCameraViewListener2{
         //Music Service
         //Intent musicIntent = new Intent(this, MusicService.class);
         //startService(musicIntent);
-        
+        	musicPlayer = new MusicPlayerCrossFade(this);
         //Music Pool
-        musicPool = new MusicPool(this);
+        //musicPool = new MusicPool(this);
         
     }
 	
@@ -308,6 +308,8 @@ public class MusicActivity extends Activity implements CvCameraViewListener2{
         super.onDestroy();
         mOpenCvCameraView.disableView();
         
+        musicPlayer.stop();
+        
         //Music Service
         //Intent musicIntent = new Intent(this, MusicService.class);
         //stopService(musicIntent);
@@ -332,6 +334,7 @@ public class MusicActivity extends Activity implements CvCameraViewListener2{
     }
 
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
+    	int curEmo;
     	
     	try {
 			//trainWeka();
@@ -425,8 +428,9 @@ public class MusicActivity extends Activity implements CvCameraViewListener2{
 
 			}
 			
-			if (cFrame==9)
+			if (cFrame==3)
 			{
+				
 				//make prediction.
 				svm_model model = null;
 				try {
@@ -504,11 +508,12 @@ public class MusicActivity extends Activity implements CvCameraViewListener2{
 				cFrame = -1;	
 				
 				//guessResult.setText(""+v);
-				Log.d("SVM", "result: " + (getMaxIndex(freq)+1));
+				curEmo = getMaxIndex(freq)+1;
+				Log.d("SVM", "result: " + curEmo);
 				
 				//emoDesc = (TextView) findViewById(R.id.emo_desc);
-				if (prevEmo != (getMaxIndex(freq)+1)){  //update to new emo
-					prevEmo = (getMaxIndex(freq)+1);
+				if (prevEmo != curEmo){  //update to new emo
+					prevEmo = curEmo;
 					showEmo(prevEmo);
 				}
 				//showEmo(getMaxIndex(freq)+1);
@@ -625,94 +630,129 @@ public class MusicActivity extends Activity implements CvCameraViewListener2{
     }
     
     //Show emo on screen
-    void showEmo(int intEmo){
+    void showEmo(final int intEmo){
     	//Music Service
     	//Intent musicBroadcast = new Intent(Const.ACTION_CHANGE_MUSIC);
     	//musicBroadcast.putExtra(Const.EMO_INDEX, intEmo-1);
     	//sendBroadcast(musicBroadcast);
-    	
+    	musicPlayer.play(intEmo);
     	//MusicPool
-    	musicPool.play(intEmo-1);
+    	//musicPool.play(intEmo-1);
     	//musicPool.pressButton(intEmo-1);
     	
-    	if (intEmo==Const.EMO_SURPRISE){
-    		runOnUiThread(new Runnable() {					
-    			@Override
-    			public void run() {
-    				// TODO Auto-generated method stub
-    				
-    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
-    				emo.setImageResource(R.drawable.emo_surprised);
-    				emoDesc.setText("Surprise");
-    			}
-    		});
-    	}
-    	else if (intEmo==Const.EMO_FEAR){
-    		runOnUiThread(new Runnable() {					
-    			@Override
-    			public void run() {
-    				// TODO Auto-generated method stub
-    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
-    				emo.setImageResource(R.drawable.emo_fear);
-    				emoDesc.setText("Fear");
-    			}
-    		});
-    	}
-    	else if (intEmo==Const.EMO_HAPPY){
-    		runOnUiThread(new Runnable() {					
-    			@Override
-    			public void run() {
-    				// TODO Auto-generated method stub
-    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
-    				emo.setImageResource(R.drawable.emo_happy);
-    				emoDesc.setText("Happy");
-    			}
-    		});
-    	}
-    	else if (intEmo==Const.EMO_SAD){
-    		runOnUiThread(new Runnable() {					
-    			@Override
-    			public void run() {
-    				// TODO Auto-generated method stub
-    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
-    				emo.setImageResource(R.drawable.emo_sad);
-    				emoDesc.setText("Sad");
-    			}
-    		});
-    	}
-    	else if (intEmo==Const.EMO_SAD){
-    		runOnUiThread(new Runnable() {					
-    			@Override
-    			public void run() {
-    				// TODO Auto-generated method stub
-    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
-    				emo.setImageResource(R.drawable.emo_angry);
-    				emoDesc.setText("Anger");
-    			}
-    		});
-    	}
-    	else if (intEmo==6){
-    		runOnUiThread(new Runnable() {					
-    			@Override
-    			public void run() {
-    				// TODO Auto-generated method stub
-    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
-    				emo.setImageResource(R.drawable.emo_disgust);
-    				emoDesc.setText("Disgust");
-    			}
-    		});
-    	}
-    	else{
-    		runOnUiThread(new Runnable() {					
-    			@Override
-    			public void run() {
-    				// TODO Auto-generated method stub
-    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
-    				emo.setImageResource(R.drawable.ic_launcher);
-    				emoDesc.setText("Neutral");
-    			}
-    		});
-    	}
+//    	if (intEmo==Const.EMO_SURPRISE){
+//    		runOnUiThread(new Runnable() {					
+//    			@Override
+//    			public void run() {
+//    				// TODO Auto-generated method stub
+//    				
+//    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
+//    				emo.setImageResource(R.drawable.emo_surprised);
+//    				emoDesc.setText("Surprise");
+//    			}
+//    		});
+//    	}
+//    	else if (intEmo==Const.EMO_FEAR){
+//    		runOnUiThread(new Runnable() {					
+//    			@Override
+//    			public void run() {
+//    				// TODO Auto-generated method stub
+//    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
+//    				emo.setImageResource(R.drawable.emo_fear);
+//    				emoDesc.setText("Fear");
+//    			}
+//    		});
+//    	}
+//    	else if (intEmo==Const.EMO_HAPPY){
+//    		runOnUiThread(new Runnable() {					
+//    			@Override
+//    			public void run() {
+//    				// TODO Auto-generated method stub
+//    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
+//    				emo.setImageResource(R.drawable.emo_happy);
+//    				emoDesc.setText("Happy");
+//    			}
+//    		});
+//    	}
+//    	else if (intEmo==Const.EMO_SAD){
+//    		runOnUiThread(new Runnable() {					
+//    			@Override
+//    			public void run() {
+//    				// TODO Auto-generated method stub
+//    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
+//    				emo.setImageResource(R.drawable.emo_sad);
+//    				emoDesc.setText("Sad");
+//    			}
+//    		});
+//    	}
+//    	else if (intEmo==Const.EMO_SAD){
+//    		runOnUiThread(new Runnable() {					
+//    			@Override
+//    			public void run() {
+//    				// TODO Auto-generated method stub
+//    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
+//    				emo.setImageResource(R.drawable.emo_angry);
+//    				emoDesc.setText("Anger");
+//    			}
+//    		});
+//    	}
+//    	else if (intEmo==6){
+//    		runOnUiThread(new Runnable() {					
+//    			@Override
+//    			public void run() {
+//    				// TODO Auto-generated method stub
+//    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
+//    				emo.setImageResource(R.drawable.emo_disgust);
+//    				emoDesc.setText("Disgust");
+//    			}
+//    		});
+//    	}
+//    	else{
+//    		runOnUiThread(new Runnable() {					
+//    			@Override
+//    			public void run() {
+//    				// TODO Auto-generated method stub
+//    				((BitmapDrawable)emo.getDrawable()).getBitmap().recycle();
+//    				emo.setImageResource(R.drawable.ic_launcher);
+//    				emoDesc.setText("Neutral");
+//    			}
+//    		});
+//    	}
+    	
+    	runOnUiThread(new Runnable() {					
+			@Override
+			public void run() {
+				emo.setImageResource(0);
+				switch(intEmo){
+					case Const.EMO_HAPPY:
+						emo.setImageResource(R.drawable.emo_happy);
+						emoDesc.setText("Happy");
+						break;
+					case Const.EMO_SAD:
+						emo.setImageResource(R.drawable.emo_sad);
+						emoDesc.setText("Sad");
+						break;
+					case Const.EMO_SURPRISE:
+						emo.setImageResource(R.drawable.emo_surprised);
+						emoDesc.setText("Surprise");
+						break;
+					case Const.EMO_ANGER:
+						emo.setImageResource(R.drawable.emo_angry);
+						emoDesc.setText("Angry");
+						break;
+					case Const.EMO_DISGUST:
+						emo.setImageResource(R.drawable.emo_disgust);
+						emoDesc.setText("Disgust");
+						break;
+					case Const.EMO_FEAR:
+						emo.setImageResource(R.drawable.emo_fear);
+						emoDesc.setText("Fear");
+						break;
+				}
+
+				
+			}
+		});
     	
     }
     

@@ -12,7 +12,6 @@ include $(CLEAR_VARS)
 #OPENCV_CAMERA_MODULES:=off
 #OPENCV_INSTALL_MODULES:=off
 #OPENCV_LIB_TYPE:=SHARED
-#include /media/work/Develop/opencv/OpenCV-2.4.6-android-sdk/sdk/native/jni/OpenCV.mk
 include C:\OpenCV-2.4.9-android-sdk\OpenCV-2.4.9-android-sdk\sdk\native\jni\OpenCV.mk
 LOCAL_SRC_FILES  := DemoFit.cpp
 LOCAL_C_INCLUDES += $(LOCAL_PATH)
