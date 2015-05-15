@@ -15,7 +15,10 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.Rect;
+import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
+import org.opencv.imgproc.Imgproc;
 import org.opencv.core.Scalar;
 import org.opencv.core.Point;
 import org.opencv.android.CameraBridgeViewBase;
@@ -36,14 +39,18 @@ import weka.classifiers.Evaluation;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.core.Instances;
 
+import android.R.bool;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
@@ -66,6 +73,12 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
     private Mat                    	mRgba;
     private Mat                    	mGray;
     private Mat                    	mGray2;
+    private Mat 					mRgbaT;
+    private Mat						mGrayT;
+    private double					ratioRes;
+    private int						screenWidth;
+    private int						screenHeight;
+    private int						rotateCam=-1;
     private File                   	mCascadeFile;
     private File                   	mFastCascadeFile;
     private File                   	mModelFile;
@@ -75,7 +88,7 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
     private boolean					mPortrait = false; //fit asm in portrait view
     private boolean					mFastDetect = true; //use fastDetect since beginning
     private Mat						mShape;
-    private static final Scalar 	mColor = new Scalar(255, 0, 0);
+    private static final Scalar 	mColor = new Scalar(0, 255, 0);
     private MenuItem               	mHelpItem;
     private MenuItem               	mDetectItem;
     private MenuItem               	mOrieItem;
@@ -205,6 +218,19 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.fd_activity_surface_view);
         mOpenCvCameraView.setCvCameraViewListener(this);
         mOpenCvCameraView.enableFpsMeter();
+        
+        //Log.d("CamView",Build.FINGERPRINT+" =P " + Build.MODEL);
+        //get screen resolution
+        DisplayMetrics displaymetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+        ratioRes = (double)displaymetrics.widthPixels/displaymetrics.heightPixels;
+        //ratioRes = (double)mOpenCvCameraView.getWidth()/mOpenCvCameraView.getHeight();
+        //04-07 14:45:06.839: D/CamView(1282): generic/vbox86p/vbox86p:4.3/JLS36G/eng.buildbot.20141001.104431:userdebug/test-keys =P Samsung Galaxy Note 3 - 4.3 - API 18 - 1080x1920
+
+        //screenWidth = displaymetrics.widthPixels;
+        //screenHeight = displaymetrics.heightPixels;
+        //if (ratioRes>1) ratioRes=1/ratioRes; //i don't know if it helps. 
+        
         mFrame = 0;
         mFlag = false;
         copyAssets(); 
@@ -255,7 +281,7 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
         	mDetectItem = menu.add("CascadeDetector");
         else
         	mDetectItem = menu.add("FastCascadeDetector");
-        mHelpItem = menu.add("About ASMLibrary");
+        mHelpItem = menu.add("About");
         return true;
     }
     
@@ -264,11 +290,11 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
         Log.i(TAG, "called onOptionsItemSelected; selected item: " + item);
         
         if (item == mHelpItem)
-        	new AlertDialog.Builder(this).setTitle("About ASMLibrary")
-        		.setMessage("ASMLibrary -- A compact SDK for face alignment/tracking\n" +
-        				"Copyright (c) 2008-2011 by Yao Wei, all rights reserved.\n" +
-        				"Contact: njustyw@gmail.com\n")
-        				.setPositiveButton("OK", null).show();
+        	new AlertDialog.Builder(this).setTitle("About")
+    		.setMessage("FYP - Analysis of mood using video\n"+
+    				"FYP Student: Yean Seanglidet\n" +
+    				"ASMLibrary Copyright (c) 2008-2011 by Yao Wei, all rights reserved.\n")
+    				.setPositiveButton("OK", null).show();
         else if(item == mDetectItem)
         {
         	mFastDetect = !mFastDetect;
@@ -282,10 +308,15 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
         	
         	if(mCameraIndex == CameraBridgeViewBase.CAMERA_ID_ANY ||
         			mCameraIndex == CameraBridgeViewBase.CAMERA_ID_BACK)
-        		
+        	{
         		mCameraIndex = CameraBridgeViewBase.CAMERA_ID_FRONT;
+        		rotateCam=-1;
+        	}
         	else
+        	{
         		mCameraIndex = CameraBridgeViewBase.CAMERA_ID_BACK;
+        		rotateCam=1;
+        	}
         	
         	
         	mOpenCvCameraView.disableView();
@@ -308,38 +339,100 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
         mGray = new Mat();
         mGray2 = new Mat();
         mRgba = new Mat();
+        mRgbaT = new Mat();
+        mGrayT = new Mat();
         mShape = new Mat();
+        
         mFrame = 0;
         mFlag = false;
-        
         
     }
 
     public void onCameraViewStopped() {
         mGray.release();
         mRgba.release();
+        mRgbaT.release();
+        mGrayT.release();
     }
 
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
     	int curEmo;
-    	
+//    	int cropHeight;
+//	   	int cropWidth;
+//	   	int cropX;
+//	   	int cropY;
+	   	
     	try {
 			//trainWeka();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+    	//ratioRes = (double)mOpenCvCameraView.getWidth()/mOpenCvCameraView.getHeight();
+    	//Log.d("CamView", mOpenCvCameraView.getWidth() + "  "+mOpenCvCameraView.getHeight());
+    	//Log.d("CamView", mOpenCvCameraView.getMeasuredWidth() + "  "+mOpenCvCameraView.getMeasuredHeight()+ " lol");
+    	 if (isPhone()){
+    	 mRgba = inputFrame.rgba();
+    	 mGray = inputFrame.gray();
+   
+    	 mRgbaT = mRgba.t();
+    	 mGrayT = mGray.t();
+    	 
+    	 if(mPortrait ==true) 
+         	Core.transpose(mGray, mGray2);
+         else
+         	mGray2 = mGray;
+    	 
+    	 //if(mRgba.width()>= mRgba.height()) rotateCam=-1;
+    	 
+    	 Core.flip(mRgba.t(), mRgbaT, rotateCam);
+    	 Core.flip(mGray2.t(),mGrayT, rotateCam);
+    	 
+    	 
+//    	 if (mGrayT.width()>= mGrayT.height()){
+//    	 
+//    		 cropHeight = mGrayT.height();
+//    		 cropWidth = (int)(mGrayT.height()* ratioRes);
+//    	     cropX = (mGrayT.width()-cropWidth)/2;
+//    	     cropY = 0;
+//    	 }
+//    	 else{
+//    		 
+//    		 cropHeight = (int)(mGrayT.width()/ratioRes);
+//    		 cropWidth = mGrayT.width();
+//    	     cropX = 0;
+//    	     cropY = (mGrayT.height()-cropHeight)/2;
+//    	 }
+    	 int cropWidth= mRgbaT.cols();
+    	 int cropYposition = Math.abs(mRgbaT.rows()- mRgbaT.cols())/2; 
+    	 Rect myROI = new Rect(0, cropYposition, cropWidth,(int)(cropWidth*ratioRes));
+    	 //crop image
+    	 //Rect myROI = new Rect(0, cropY , cropWidth,cropHeight);
     	
-        mRgba = inputFrame.rgba();
-        mGray = inputFrame.gray();
-        
-        
-        
-        if(mPortrait ==true) 
-        	Core.transpose(mGray, mGray2);
-        else
-        	mGray2 = mGray;
-        
+    	 mRgbaT = new Mat(mRgbaT,myROI);
+    	 
+    	 mGrayT=new Mat(mGrayT,myROI);
+    	 
+    	 
+    	 //Log.d("mat", mRgba.size()+"  "+mRgbaT.size());
+    	 Imgproc.resize(mRgbaT, mRgbaT,mRgba.size());
+    	 Imgproc.resize(mGrayT, mGrayT,mRgba.size());
+    	 
+    	 }
+    	 else{
+    		 mRgbaT = inputFrame.rgba();
+        	 mGray = inputFrame.gray();
+        	 
+        	 if(mPortrait ==true) 
+              	Core.transpose(mGray, mGray2);
+              else
+              	mGray2 = mGray;
+        	 
+        	 mGrayT = mGray2;
+    	 }
+    	 
+    	 
+    	 
         //WindowManager manager = getWindowManager();
         //int width = manager.getDefaultDisplay().getWidth();
         //int height = manager.getDefaultDisplay().getHeight();
@@ -349,15 +442,18 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 		{
         	Mat detShape = new Mat();
 			if(mFastDetect)
-				mFlag = mASMFit.fastDetectAll(mGray2, detShape);
+				//mFlag = mASMFit.fastDetectAll(mGray2, detShape);
+				mFlag = mASMFit.fastDetectAll(mGrayT, detShape);
 			else
-				mFlag = mASMFit.detectAll(mGray2, detShape);
+				//mFlag = mASMFit.detectAll(mGray2, detShape);
+				mFlag = mASMFit.detectAll(mGrayT, detShape);
 			if(mFlag)	mShape = detShape.row(0);
 		}
 			
 		if(mFlag) 
 		{
-			mFlag = mASMFit.videoFitting(mGray2, mShape, mFrame);
+			//mFlag = mASMFit.videoFitting(mGray2, mShape, mFrame);
+			mFlag = mASMFit.videoFitting(mGrayT, mShape, mFrame);
 		}
 		
 		if(mFlag)
@@ -392,8 +488,9 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 					double y = mShape.get(0, 2*i+1)[0];
 					Point pt = new Point(y, x);
 					
-					Core.circle(mRgba, pt, 3, mColor);
+					Core.circle(mRgbaT, pt, 5, mColor,-1);
 				}		
+				
 			}
 			else
 			{
@@ -410,7 +507,8 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 				for(int i = 0; i < nPoints; i++)
 				{ 
 					Point pt = new Point(mShape.get(0, 2*i)[0], mShape.get(0, 2*i+1)[0]);
-					Core.circle(mRgba, pt, 3, mColor);
+					Core.circle(mRgbaT, pt, 5, mColor,-1);
+					
 				}
 
 			}
@@ -516,20 +614,12 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 			cFrame ++;
 			Log.d("cFrame", ""+cFrame);
 			
-			
-			
 		}
-		
-		
-
-		
-		
-
-		
 		
 		mFrame ++;
 		
-        return mRgba;
+        return mRgbaT;
+		//return mGrayT;
     }
  
     //Line Graph
@@ -613,6 +703,14 @@ public class ASMLibraryActivity extends Activity implements CvCameraViewListener
 		lineGraph.repaint();
 
     	
+    }
+    
+    //check Phone/Emulator
+    boolean isPhone(){
+    	if (Build.FINGERPRINT.contains("generic")){
+    		return false;
+    	}
+    	return true;
     }
     
     //Show emo on screen
